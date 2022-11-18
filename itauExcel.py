@@ -11,7 +11,7 @@ def ExportExcel(fileName, dataFrame):
                   'Amount': dataFrame.TransactionAmount,
                   'Period': dataFrame.TransactionPeriod,
                   'Current Installment': dataFrame.CurrentInstallment,
-                  'Total Installments': dataFrame.TotalInstallments})
+                  'Total Installments': dataFrame.NumberOfInstallments})
     Periods = df.Period.unique()
     l.info(Periods)
     with pd.ExcelWriter(fileName) as writer:
@@ -46,7 +46,7 @@ def __Transform(dataFrame, period, origin):
                          'TransactionCategory': dataFrame.Category,
                          'TransactionDescription': '',
                          "CurrentInstallment": [__GetTransactionTitleAndInstallments(t)[1] for t in dataFrame.Transaction],
-                         "TotalInstallments": [__GetTransactionTitleAndInstallments(t)[2] for t in dataFrame.Transaction],
+                         "NumberOfInstallments": [__GetTransactionTitleAndInstallments(t)[2] for t in dataFrame.Transaction],
                          "RecordCreationEpoch":''})#dt.DateToEpoch(timestamp.today())})
 
 def __GenerateDuplicateMask(dataFrame):
@@ -80,7 +80,7 @@ def ImportExcel(arquivo,periodoLancamento,origemLancamento):
     return __FixDuplicates(__Transform(__ReadExcel(arquivo),periodoLancamento,origemLancamento))
 
 def EstruturaExcelParaDataframe(sheetsPath):
-    d = pd.DataFrame(columns = ["TransactionTitle", "TransactionPeriod", "TransactionOrigin","TransactionEpoch","TransactionAmount","TransactionCategory", "CurrentInstallment", "TotalInstallments" ,"RecordCreationEpoch"])
+    d = pd.DataFrame(columns = ["TransactionTitle", "TransactionPeriod", "TransactionOrigin","TransactionEpoch","TransactionAmount","TransactionCategory", "CurrentInstallment", "NumberOfInstallments" ,"RecordCreationEpoch"])
     for p in __LocateSheets(sheetsPath):
         d.append(ImportExcel(p[0],p[1],p[2]))
     return d
