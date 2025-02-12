@@ -8,7 +8,7 @@ def __PtBrMonthToNumber(mes):
         return '01'
     elif (mes == 'fevereiro'):
         return '02'
-    elif (mes == 'março'):
+    elif (mes == 'março' or mes == 'marco'):
         return '03'
     elif (mes == 'abril'):
         return '04'
@@ -33,7 +33,11 @@ def __PtBrMonthToNumber(mes):
 
 def AdaptDate(dataStr):
     l.info('AdaptDate ' + dataStr)
-    return DateToEpoch(StrDateToDate(dataStr)) if (dataStr.count('/') == 2) else DateToEpoch(StrDateFullToDate(dataStr))
+    return DateToEpoch(AdaptStrToDate(dataStr))
+
+def AdaptStrToDate(dataStr):
+    l.info('AdaptStrToDate ' + dataStr)
+    return StrDateToDate(dataStr) if (dataStr.count('/') == 2) else StrDateFullToDate(dataStr)
 
 def StrDateToDate(dataStr):
     l.info('StrDateToDate ' + dataStr)

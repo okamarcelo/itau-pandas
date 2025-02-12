@@ -1,29 +1,36 @@
-import pandas as pd
-import os
-#from datetime import timestamp
-import datetimeFunc as dt
-import logging as l
+def ItauCreditoToDataFrame(xlsName):
+    import pandas as pd
+    import re
+    df = pd.DataFrame(columns=['Date', 'Transaction', 'Amount', 'Owner'])
+    owner = ""
+    for index, row in pd.read_excel(xlsName, names=['A','B','C','D'], usecols='A:D').iterrows():
+        if pd.notna(row['A']):
+            x = re.search(r'^(.*) - final ([0-9]{4}) \(.*\)$', row['A'])
+            if x:
+                if "total" not in x.group(1):
+                    owner = (x.group(1) + "(" + x.group(2) + ")")                    
+                else:
+                    owner = ""
+            else:
+                if (owner and "/" in row['A']) and ("dólar de conversão" not in row['B']) and pd.notna(row['D']):
+                    df.loc[len(df)] = [row['A'], row['B'], row['D'], owner]
+    return df
 
-def ExportExcel(fileName, dataFrame):
-    df = pd.DataFrame({'Date': [ dt.EpochToDate(d) for d in dataFrame.TransactionEpoch], 
-                  'Transaction': dataFrame.TransactionTitle, 
-                  'Category': dataFrame.TransactionCategory, 
-                  'Amount': dataFrame.TransactionAmount,
-                  'Period': dataFrame.TransactionPeriod,
-                  'Current Installment': dataFrame.CurrentInstallment,
-                  'Total Installments': dataFrame.NumberOfInstallments})
-    Periods = df.Period.unique()
-    l.info(Periods)
-    with pd.ExcelWriter(fileName) as writer:
-        for Period in Periods:
-            df[df.Period == Period].to_excel(writer, index=None, sheet_name=Period)
+def ItauDebitoToDataFrame(xlsName):
+    import pandas as pd
+    import re
+    df = pd.DataFrame(columns=['Date', 'Transaction', 'Amount', 'Owner'])
+    owner = ""
+    rd = pd.read_excel(xlsName, names=['A','B','C','D'], usecols='A:D')
+    df['Date'] = rd['A']
+    df['Transaction'] = rd['B']
+    df['Amount'] = rd['D']
+    df['Owner'] = ""
+    df = df.dropna(subset=['Amount']).dropna(subset=['Transaction']).dropna(subset=['Date']).iloc[1:]
 
-def __ReadExcel(xlsName):
-    d = pd.read_excel(xlsName, names=['Date', 'Transaction', 'Category', 'Amount'], usecols='A:D')
-    d = d[d.Date.str.contains("/", na=False) & d.Amount.notnull()]
-    return d 
+    return df
 
-def __GetTransactionTitleAndInstallments(strTransaction):
+def GetTransactionTitleAndInstallments(strTransaction):
     if "/" in strTransaction:
         s = strTransaction.replace("(","").replace(")","")
         ss = s.split("/")
@@ -37,50 +44,14 @@ def __GetTransactionTitleAndInstallments(strTransaction):
     else:
         return (strTransaction,None,None)
 
-def __Transform(dataFrame, period, origin):
-    return pd.DataFrame({'TransactionTitle': [__GetTransactionTitleAndInstallments(t)[0] for t in dataFrame.Transaction],
-                         'TransactionPeriod': period,
-                         'TransactionOrigin': origin,
-                         'TransactionEpoch': [dt.AdaptDate(d) + 3600 * 3 for d in dataFrame.Date],
-                         'TransactionAmount': dataFrame.Amount * (-1 if origin == 'Credito' else 1),
-                         'TransactionCategory': dataFrame.Category,
-                         'TransactionDescription': '',
-                         "CurrentInstallment": [__GetTransactionTitleAndInstallments(t)[1] for t in dataFrame.Transaction],
-                         "NumberOfInstallments": [__GetTransactionTitleAndInstallments(t)[2] for t in dataFrame.Transaction],
-                         "RecordCreationEpoch":''})#dt.DateToEpoch(timestamp.today())})
+def Transform(dataFrame, origin, PaymentDate):
+    import pandas as pd
+    import datetimeFunc as dt
+    return pd.DataFrame({'Title': [GetTransactionTitleAndInstallments(t)[0] for t in dataFrame.Transaction],
+                         'Date': [dt.AdaptStrToDate(d) for d in dataFrame.Date],
+                         'PaymentDate': [dt.AdaptStrToDate(d) for d in dataFrame.Date] if PaymentDate == None else PaymentDate,
+                         'Amount': dataFrame.Amount * (-1 if origin == 'Credito' else 1),
+                         'Origin': origin,
+                         'Owner': dataFrame.Owner})
 
-def __GenerateDuplicateMask(dataFrame):
-    return dataFrame.duplicated(subset=['TransactionEpoch','TransactionAmount','TransactionTitle'])
-
-def __NormalizeDuplicates(dataFrame):
-    dataFrame.TransactionEpoch = dataFrame.TransactionEpoch.where(~__GenerateDuplicateMask(dataFrame), dataFrame.TransactionEpoch + 1)
-    return dataFrame
-
-def __FixDuplicates(dataFrame):
-    dd = __GenerateDuplicateMask(dataFrame)
-    while dd.any():
-        l.warn('duplicates found')
-        dataFrame = __NormalizeDuplicates(dataFrame)
-        dd = __GenerateDuplicateMask(dataFrame)
-    return dataFrame
-
-def __LocateSheets(rootDir):
-    lista = []
-    for root, dirs, files in os.walk(rootDir):
-        for f in files:
-            fullpath = os.path.abspath(os.path.join(root,f))
-            print(fullpath)
-            splitpath = fullpath.split('\\')
-            arquivo = splitpath.pop()
-            diretorio = splitpath.pop()
-            lista.append((fullpath,arquivo.split('.')[0], diretorio))
-    return lista
-
-def ImportExcel(arquivo,periodoLancamento,origemLancamento):
-    return __FixDuplicates(__Transform(__ReadExcel(arquivo),periodoLancamento,origemLancamento))
-
-def EstruturaExcelParaDataframe(sheetsPath):
-    d = pd.DataFrame(columns = ["TransactionTitle", "TransactionPeriod", "TransactionOrigin","TransactionEpoch","TransactionAmount","TransactionCategory", "CurrentInstallment", "NumberOfInstallments" ,"RecordCreationEpoch"])
-    for p in __LocateSheets(sheetsPath):
-        d.append(ImportExcel(p[0],p[1],p[2]))
-    return d
+ 
