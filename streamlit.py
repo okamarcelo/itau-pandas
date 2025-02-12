@@ -6,33 +6,31 @@ import categorias as cat
 import mes as m
 import loggerfactory as l
 
-log = l.getLogger(__name__)
+log = l.getLogger("")
 
 baseDir = '~/Documents/Planilhas/'
 categories = cat.CarregarCategorias(baseDir)
 meses = []
 mesesAlice = []
 datas = ['2025-01-09', '2025-02-09', '2025-03-09', '2025-04-09', '2025-05-09', '2025-06-09']
-count = 0
-for i in ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho']:
-    log.error('Carregando ' + i + ' ' + str(count))
-    total, totalAlice = m.CarregarMes('~/Documents/Planilhas/' + '2025/' + i + '/', datas[count], 'ALICE')    
-    log.error("1")
-    if total is not None:
-        meses.append(total)
-    log.error("2")
-    if totalAlice is not None:
-        mesesAlice.append(totalAlice)
-    log.error("3")
-    count = count + 1
-    log.error("4")  
+nomes_meses = ['janeiro', 'fevereiro', 'marco']
+tabs = st.tabs(nomes_meses)
+for idx, item in enumerate(nomes_meses):
+    total, totalAlice = m.CarregarMes('/home/okamarcelo/Documents/Planilhas/' + '2025/' + item + '/', datas[idx], 'ALICE', log)    
+    st.divider()
+    nome_mes = item.capitalize()
+    with tabs[idx]:
+        st.header(nome_mes)
+        if totalAlice is not None:
+            mesesAlice.append(totalAlice)
+            st.write("Gastos cartão Alice:" + str(abs(totalAlice['Amount'].sum())))
+        if total is not None:
+            total_cat=pd.merge(total, categories, on='Title_Merge', how='left')
+            meses.append(total_cat)
+            s.GraficoPizza(total_cat)
 
 gastos = pd.concat(meses, ignore_index=True)
-
 gastos_categorizados = pd.merge(gastos, categories, on='Title_Merge', how='left')
-st.divider()
-st.write(creditoAlice['Amount'].sum())
-st.divider()
 
 precisa_categorizar = gastos_categorizados.loc[gastos_categorizados['Category'].isnull(), 'Title'].unique()
 st.write(precisa_categorizar)
@@ -66,11 +64,6 @@ with tab1:
     st.write("this is tab 1")
 
 
-
-gastos_categorizados['Category'] = gastos_categorizados['Category'].fillna('?')
-gastos_categorizados['Amount'] = abs(gastos_categorizados['Amount'])
-
-s.GraficoPizza(gastos_categorizados)
 
 # Add a selectbox to the sidebar:
 add_selectbox = st.sidebar.selectbox(

@@ -16,6 +16,20 @@ def ItauCreditoToDataFrame(xlsName):
                     df.loc[len(df)] = [row['A'], row['B'], row['D'], owner]
     return df
 
+def ItauPrevisoesToDataFrame(csvNames):
+    import pandas as pd
+    import re
+    df = pd.DataFrame(columns=['Date', 'Transaction', 'Amount', 'Owner'])
+    owner = ""
+    rd = pd.read_csv(csvNames)
+    df['Date'] = rd['data']
+    df['Transaction'] = rd['transacao']
+    df['Amount'] = rd['valor']
+    df['Owner'] = ""
+    df = df.dropna(subset=['Amount']).dropna(subset=['Transaction']).dropna(subset=['Date'])
+
+    return df
+
 def ItauDebitoToDataFrame(xlsName):
     import pandas as pd
     import re
