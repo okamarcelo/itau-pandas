@@ -1,3 +1,6 @@
+from datetime import datetime
+import os
+
 def ItauCreditoToDataFrame(xlsName):
     import pandas as pd
     import re
@@ -63,7 +66,7 @@ def Transform(dataFrame, origin, PaymentDate):
     import datetimeFunc as dt
     return pd.DataFrame({'Title': [GetTransactionTitleAndInstallments(t)[0] for t in dataFrame.Transaction],
                          'Date': [dt.AdaptStrToDate(d) for d in dataFrame.Date],
-                         'PaymentDate': [dt.AdaptStrToDate(d) for d in dataFrame.Date] if PaymentDate == None else PaymentDate,
+                         'PaymentDate': [dt.AdaptStrToDate(d) for d in dataFrame.Date] if PaymentDate == None else datetime.strptime(PaymentDate, "%Y-%m-%d"),
                          'Amount': dataFrame.Amount * (-1 if origin == 'Credito' else 1),
                          'Origin': origin,
                          'Owner': dataFrame.Owner})

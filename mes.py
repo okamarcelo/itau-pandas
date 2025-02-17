@@ -1,15 +1,24 @@
 import itauExcel as i
 import pandas as pd
 import pathlib as pl
+from dataclasses import dataclass
+
+@dataclass
+class MonthExpense:
+    month: str
+    total: pd.DataFrame
+    totalOwner: pd.DataFrame
+
 
 def ArquivoExiste(path):
     file = pl.Path(path)
     return file.is_file()
 
-def CarregarMes(diretorio, dataCobranca, ownerExcluido, log):
-    arquivoDebito = diretorio + 'Extrato.xls'
-    arquivoCredito = diretorio + 'Fatura-Excel.xls'
-    arquivoPrevisoes = diretorio + 'Previsoes.csv'
+def CarregarMes(diretorio, ano, mes, ownerExcluido, log):
+    fullpath = diretorio + ano  + '/' + mes + '/'
+    arquivoDebito = fullpath + 'Extrato.xls'
+    arquivoCredito = fullpath + 'Fatura-Excel.xls'
+    arquivoPrevisoes = fullpath + 'Previsoes.csv'
     todasPlanilhas = []
        
     if (ArquivoExiste(arquivoDebito)):
@@ -17,20 +26,22 @@ def CarregarMes(diretorio, dataCobranca, ownerExcluido, log):
     else:
         log.error('Arquivo ' + arquivoDebito + ' não encontrado')
     if (ArquivoExiste(arquivoCredito)):
-        todasPlanilhas.append(i.Transform(i.ItauCreditoToDataFrame(arquivoCredito), 'Credito', dataCobranca))
+        todasPlanilhas.append(i.Transform(i.ItauCreditoToDataFrame(arquivoCredito), 'Credito', ano + '-' + mes + '-09'))
     else:
         log.error('Arquivo ' + arquivoCredito + ' não encontrado')
     if (ArquivoExiste(arquivoPrevisoes)):
-        todasPlanilhas.append(i.Transform(i.ItauPrevisoesToDataFrame(arquivoPrevisoes), 'Previsoes', None))
+        f = i.Transform(i.ItauPrevisoesToDataFrame(arquivoPrevisoes), 'Previsoes', None)
+        log.fatal(f)
+        todasPlanilhas.append(f)
     else:
         log.error('Arquivo ' + arquivoPrevisoes + ' não encontrado')
     if len(todasPlanilhas) == 0:
         log.error('Nenhuma planilha encontrada')
-        return None, None
+        return MonthExpense(mes + '/' + ano, None, None)
     
     total = pd.concat(todasPlanilhas, ignore_index=True)
     total = total.assign(Title_Merge=lambda row: row.Title.str.strip().str.upper().str.replace(' ',''))
     totalOwner = total.loc[total['Owner'].str.contains(ownerExcluido)]
     total = total.loc[~total['Owner'].str.contains(ownerExcluido)].sort_values(by='Date')
-    return total, totalOwner
+    return MonthExpense(mes + '/' + ano, total, totalOwner)
     
