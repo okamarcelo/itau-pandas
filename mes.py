@@ -29,10 +29,8 @@ def CarregarMes(diretorio, ano, mes, ownerExcluido, log):
         todasPlanilhas.append(i.Transform(i.ItauCreditoToDataFrame(arquivoCredito), 'Credito', ano + '-' + mes + '-09'))
     else:
         log.error('Arquivo ' + arquivoCredito + ' não encontrado')
-    if (ArquivoExiste(arquivoPrevisoes)):
-        f = i.Transform(i.ItauPrevisoesToDataFrame(arquivoPrevisoes), 'Previsoes', None)
-        log.fatal(f)
-        todasPlanilhas.append(f)
+    if (ArquivoExiste(arquivoPrevisoes)):        
+        todasPlanilhas.append(i.Transform(i.ItauPrevisoesToDataFrame(arquivoPrevisoes), 'Previsoes', None))
     else:
         log.error('Arquivo ' + arquivoPrevisoes + ' não encontrado')
     if len(todasPlanilhas) == 0:

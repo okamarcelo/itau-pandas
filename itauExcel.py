@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 
 def ItauCreditoToDataFrame(xlsName):
     import pandas as pd
@@ -8,7 +7,7 @@ def ItauCreditoToDataFrame(xlsName):
     owner = ""
     for index, row in pd.read_excel(xlsName, names=['A','B','C','D'], usecols='A:D').iterrows():
         if pd.notna(row['A']):
-            x = re.search(r'^(.*) - final ([0-9]{4}) \(.*\)$', row['A'])
+            x = re.search(r'^(.*) - final ([0-9]{4})', row['A'])
             if x:
                 if "total" not in x.group(1):
                     owner = (x.group(1) + "(" + x.group(2) + ")")                    

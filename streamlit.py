@@ -12,27 +12,36 @@ log = l.getLogger("")
 baseDir = '~/Documents/Planilhas/'
 categories = cat.CarregarCategorias(baseDir)
 meses = []
-for item in ['4']:
+for item in ['1', '2', '3', '4', '5', '6']:
     meses.append(m.CarregarMes('/home/okamarcelo/Documents/Planilhas/', '2025', item, 'ALICE', log))
+
+
 
         #st.header(nome_mes)
 
 
             #st.write("Gastos cartão Alice:" + str(abs(totalAlice['Amount'].sum())))
             #s.GraficoPizza(total_cat)
-#gastos = pd.concat((mes.total for mes in meses), ignore_index=True)
-#gastos= pd.merge(gastos, categories, on='Title_Merge', how='left')
+gastos = pd.concat((mes.total for mes in meses), ignore_index=True)
+gastos= pd.merge(gastos, categories, on='Title_Merge', how='left')
 #
-#data_ini = datetime.strptime('2025-02-18', "%Y-%m-%d")
-#saldo_ini = -2300
-#gastos = gastos.loc[gastos['PaymentDate'] >= data_ini]
-#gastos.iloc[-1] = ['SALDO INICIAL', data_ini - timedelta(days=1), data_ini - timedelta(days=1), saldo_ini, '', '', '', '']
-#gastos = gastos.reset_index(drop=True).reindex(columns=['Title','PaymentDate', 'Amount', 'Owner', 'Origin', 'Category']).sort_values(by='PaymentDate')
+saldo_mp = 9.63
+saldo_itau = -2359.53
+data_ini = datetime.strptime('2025-02-18', "%Y-%m-%d")
+
+data_fim = st.date_input("Data fim")
+data_fim = str(data_fim)
+data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
+print(data_fim)
+saldo_ini = saldo_mp + saldo_itau
+gastos = gastos.loc[(gastos['PaymentDate'] >= data_ini) & (gastos['PaymentDate'] <= data_fim)]
+gastos.iloc[-1] = ['SALDO INICIAL', data_ini - timedelta(days=1), data_ini - timedelta(days=1), saldo_ini, '', '', '', '']
+gastos = gastos.reset_index(drop=True).reindex(columns=['Title','PaymentDate', 'Date', 'Amount', 'Owner', 'Origin', 'Category']).sort_values(by=['PaymentDate','Date'] )
 #
-#st.write(gastos)
-#xpto = gastos[['PaymentDate', 'Amount']].groupby('PaymentDate').sum().assign(Acumulado = lambda x: x['Amount'].cumsum())
+st.write(gastos)
+xpto = gastos[['PaymentDate', 'Amount']].groupby('PaymentDate').sum().assign(Acumulado = lambda x: x['Amount'].cumsum())
 ##gastos.style.applymap(lambda x: 'color: red' if x < 0 else 'color: green', subset=['Amount'])
-#st.line_chart(xpto['Acumulado'])
+st.line_chart(xpto['Acumulado'])
 
 # precisa_categorizar = gastos.loc[gastos['Category'] == '?', 'Title'].unique()
 # st.write(precisa_categorizar)
