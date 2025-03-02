@@ -25,43 +25,28 @@ for item in ['1', '2', '3', '4', '5', '6']:
 gastos = pd.concat((mes.total for mes in meses), ignore_index=True)
 gastos= pd.merge(gastos, categories, on='Title_Merge', how='left')
 #
-saldo_mp = 9.63
-saldo_itau = -2359.53
-data_ini = datetime.strptime('2025-02-18', "%Y-%m-%d")
+saldo_mp = 2013.83
+saldo_itau = 1684.79
+data_ini = datetime.strptime('2025-03-01', "%Y-%m-%d")
 
-data_fim = st.date_input("Data fim", value='2025-03-10')
+data_fim = st.date_input("Data fim", value='2025-05-10')
 data_fim = str(data_fim)
 data_fim = datetime.strptime(data_fim, "%Y-%m-%d")
 saldo_ini = saldo_mp + saldo_itau
 val_prev_credito = -951.31
+data_x = datetime.strptime('2025-03-09' , "%Y-%m-%d")
 gastos = gastos.loc[(gastos['PaymentDate'] >= data_ini) & (gastos['PaymentDate'] <= data_fim)]
 gastos.loc[len(gastos)] = ['SALDO INICIAL', data_ini - timedelta(days=1), data_ini - timedelta(days=1), saldo_ini, '', '', '', '']
-gastos.loc[len(gastos)] = ['PREVISAO CREDITO', '2025-03-09 00:00:00', '2025-03-09 00:00:00', val_prev_credito, '', '', '', '']
-gastos = gastos.reset_index(drop=True).reindex(columns=['Title','PaymentDate', 'Date', 'Amount', 'Owner', 'Origin', 'Category']).sort_values(by=['PaymentDate','Date'] )
+gastos.loc[len(gastos)] = ['PREVISAO CREDITO', data_x, data_x, val_prev_credito, '', '', '', '']
 
-#
-st.write(gastos)
-xpto = gastos[['PaymentDate', 'Amount']].groupby('PaymentDate', as_index = False).sum().assign(Acumulado = lambda x: x['Amount'].cumsum())
-new_df = pd.DataFrame(columns=['PaymentDate','Amount', 'Acumulado'])
-for index, row in xpto.iterrows():
-    transpose_row = pd.DataFrame(row).T
-    if len(new_df) == 0:
-        new_df = transpose_row
-    else:
-        while new_df.iloc[-1].PaymentDate + timedelta(days=1) != row.PaymentDate:
-            var = pd.DataFrame(columns=['PaymentDate','Amount', 'Acumulado'],)
-            var['PaymentDate'] = [new_df.iloc[-1].PaymentDate + timedelta(days=1)]
-            var['Amount'] = 0
-            var['Acumulado'] = new_df.iloc[-1].Acumulado
-            new_df = pd.concat([new_df, var], ignore_index=True)
-        new_df = pd.concat([new_df, pd.DataFrame(transpose_row)], ignore_index=True)
-    st.write(index)
-#new_df.set_index('PaymentDate', inplace=True)
-st.write(new_df)
+s.YearSummary(gastos)
     
+st.sidebar.slider(
+     'Select a range of values',
+     data_ini, data_ini + timedelta(days=30))
 
 ##gastos.style.applymap(lambda x: 'color: red' if x < 0 else 'color: green', subset=['Amount'])
-st.line_chart(new_df['Acumulado'])
+
 
 # precisa_categorizar = gastos.loc[gastos['Category'] == '?', 'Title'].unique()
 # st.write(precisa_categorizar)
